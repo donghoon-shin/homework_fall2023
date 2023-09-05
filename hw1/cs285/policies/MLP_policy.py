@@ -56,7 +56,7 @@ def build_mlp(
 
 class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     """
-    Defines an MLP for supervised learning which maps observations to continuous
+    Defines an MLP for supervised learning which ps observations to continuous
     actions.
 
     Attributes
@@ -94,10 +94,10 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.training = training
         self.nn_baseline = nn_baseline
 
-        self.mean_net = build_mlp(
-            input_size=self.ob_dim,
+        self.mean_net  =build_mlp(
+            input_size =self.ob_dim,
             output_size=self.ac_dim,
-            n_layers=self.n_layers, size=self.size,
+            n_layers   =self.n_layers, size=self.size,
         )
         self.mean_net.to(ptu.device)
         self.logstd = nn.Parameter(
@@ -124,11 +124,19 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         :return:
             action: sampled action(s) from the policy
         """
+
         # TODO: implement the forward pass of the network.
         # You can return anything you want, but you should be able to differentiate
         # through it. For example, you can return a torch.FloatTensor. You can also
         # return more flexible objects, such as a
         # `torch.distributions.Distribution` object. It's up to you!
+
+        action = self.mean_net(t_u1)
+        return action
+        #loss_fn = torch.nn.MSELoss()
+        #loss_train = loss_fn(t_output,t_c1)
+
+
         raise NotImplementedError
 
     def update(self, observations, actions):
@@ -141,7 +149,9 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             dict: 'Training Loss': supervised learning loss
         """
         # TODO: update the policy and return the loss
-        loss = TODO
+        loss_fn = torch.nn.MSELoss()
+        loss = loss_fn(actions,observations)
+
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),

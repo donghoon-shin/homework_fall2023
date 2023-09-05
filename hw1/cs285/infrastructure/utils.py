@@ -11,7 +11,7 @@ import numpy as np
 import time
 
 from cs285.infrastructure import pytorch_util as ptu
-
+from cs285.policies.MLP_policy import MLPPolicySL
 
 def sample_trajectory(env, policy, max_path_length, render=False):
     """Sample a rollout in the environment from a policy."""
@@ -33,15 +33,16 @@ def sample_trajectory(env, policy, max_path_length, render=False):
             image_obs.append(cv2.resize(img, dsize=(250, 250), interpolation=cv2.INTER_CUBIC))
     
         # TODO use the most recent ob to decide what to do
-        ac = TODO # HINT: this is a numpy array
+        ac = ptu.to_numpy(MLPPolicySL.forward(ob)) #TODO # HINT: this is a numpy array
         ac = ac[0]
 
         # TODO: take that action and get reward and next ob
-        next_ob, rew, done, _ = TODO
+        next_ob, rew, done, _ = env.step(ac)
+
         
         # TODO rollout can end due to done, or due to max_path_length
+        rollout_done = done or (max_path_length == steps)
         steps += 1
-        rollout_done = TODO # HINT: this is either 0 or 1
         
         # record result of taking that action
         obs.append(ob)
