@@ -19,6 +19,7 @@ from cs285.infrastructure.logger import Logger
 from cs285.infrastructure.replay_buffer import ReplayBuffer
 from cs285.policies.MLP_policy import MLPPolicySL
 from cs285.policies.loaded_gaussian_policy import LoadedGaussianPolicy
+from cs285.infrastructure.utils import convert_listofrollouts
 
 
 # how many rollouts to save as videos to tensorboard
@@ -132,8 +133,7 @@ def run_training_loop(params):
             # TODO: collect `params['batch_size']` transitions
             # HINT: use utils.sample_trajectories
             # TODO: implement missing parts of utils.sample_trajectory
-            paths, envsteps_this_batch = TODO
-
+            paths, envsteps_this_batch = utils.sample_trajectories(env,actor,params['batch_size'],params['ep_len'] )
             # relabel the collected obs with actions from a provided expert policy
             if params['do_dagger']:
                 print("\nRelabelling collected observations with labels from an expert policy...")
@@ -141,7 +141,9 @@ def run_training_loop(params):
                 # TODO: relabel collected obsevations (from our policy) with labels from expert policy
                 # HINT: query the policy (using the get_action function) with paths[i]["observation"]
                 # and replace paths[i]["action"] with these expert labels
-                paths = TODO
+                for i in range(len(paths)):
+                    paths[i]["action"] = expert_policy(paths[i]["observation"])
+
 
         total_envsteps += envsteps_this_batch
         # add collected data to replay buffer

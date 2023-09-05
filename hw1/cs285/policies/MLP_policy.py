@@ -131,14 +131,9 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # return more flexible objects, such as a
         # `torch.distributions.Distribution` object. It's up to you!
 
-        action = self.mean_net(t_u1)
+        action = self.mean_net(observation)
         return action
-        #loss_fn = torch.nn.MSELoss()
-        #loss_train = loss_fn(t_output,t_c1)
-
-
-        raise NotImplementedError
-
+       
     def update(self, observations, actions):
         """
         Updates/trains the policy
