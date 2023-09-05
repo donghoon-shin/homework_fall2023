@@ -1,5 +1,5 @@
 from cs285.infrastructure.utils import *
-
+from cs285.infrastructure.utils import convert_listofrollouts
 
 class ReplayBuffer(object):
 
