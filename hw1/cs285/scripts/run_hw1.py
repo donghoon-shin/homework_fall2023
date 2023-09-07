@@ -142,7 +142,8 @@ def run_training_loop(params):
                 # HINT: query the policy (using the get_action function) with paths[i]["observation"]
                 # and replace paths[i]["action"] with these expert labels
                 for i in range(len(paths)):
-                    paths[i]["action"] = ptu.from_numpy(expert_policy(paths[i]["observation"]))
+                    #print(expert_policy(paths[i]["observation"]).type)
+                    paths[i]["action"] = ptu.to_numpy(expert_policy(ptu.from_numpy(paths[i]["observation"])))
 
 
         total_envsteps += envsteps_this_batch
