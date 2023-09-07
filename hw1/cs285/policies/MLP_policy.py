@@ -146,20 +146,20 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # TODO: update the policy and return the loss        
         loss_fn = torch.nn.MSELoss()
 
-        observations = torch.from_numpy(observations).float()
-        actions = torch.from_numpy(actions).float()
+        observations = ptu.from_numpy(observations)
+        actions = ptu.from_numpy(actions)
 
-        for trial in range(len(observations)):
-            action_policy = self.forward(observations[trial,:])    
+        actions_policy = self.forward(observations) 
+        loss = loss_fn(actions_policy,actions)
 
-            lambda_l1 = 0.05  # Regularization strength for L1
-            l1_norm = sum(p.abs().sum() for p in self.mean_net.parameters())  # Calculate the L1 term
+        #lambda_l1 = 0.000000000001  # Regularization strength for L1
+        #l1_norm = sum(p.abs().sum() for p in self.mean_net.parameters())  # Calculate the L1 term
+        #loss = loss_fn(actions_policy,actions) + lambda_l1* l1_norm
 
-            loss = loss_fn(action_policy,actions[trial,:]) + l1_norm
 
-            self.optimizer.zero_grad() # zero's out gradients
-            loss.backward() # populate gradients
-            self.optimizer.step() # update each parameter via gradient descent
+        self.optimizer.zero_grad() # zero's out gradients
+        loss.backward() # populate gradients
+        self.optimizer.step() # update each parameter via gradient descent
 
         return {
             # You can add extra logging information here, but keep this line

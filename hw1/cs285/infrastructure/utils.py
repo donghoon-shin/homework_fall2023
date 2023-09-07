@@ -33,7 +33,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
             image_obs.append(cv2.resize(img, dsize=(250, 250), interpolation=cv2.INTER_CUBIC))
     
         # TODO use the most recent ob to decide what to do
-        ac = ptu.to_numpy(policy.forward(observation = torch.from_numpy(ob).float())) #TODO # HINT: this is a numpy array
+        ac = ptu.to_numpy(policy.forward(observation = ptu.from_numpy(ob))) #TODO # HINT: this is a numpy array
         #ac = ac[0]
 
         # TODO: take that action and get reward and next ob

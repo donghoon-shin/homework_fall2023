@@ -142,7 +142,7 @@ def run_training_loop(params):
                 # HINT: query the policy (using the get_action function) with paths[i]["observation"]
                 # and replace paths[i]["action"] with these expert labels
                 for i in range(len(paths)):
-                    paths[i]["action"] = expert_policy(paths[i]["observation"])
+                    paths[i]["action"] = ptu.from_numpy(expert_policy(paths[i]["observation"]))
 
 
         total_envsteps += envsteps_this_batch
@@ -153,7 +153,6 @@ def run_training_loop(params):
         print('\nTraining agent using sampled data from replay buffer...')
         training_logs = []
         for babo in range(params['num_agent_train_steps_per_iter']):
-        #for babo in range(10):
 
           # TODO: sample some data from replay_buffer
           # HINT1: how much data = params['train_batch_size']
@@ -165,7 +164,6 @@ def run_training_loop(params):
           # use the sampled data to train an agent
           train_log = actor.update(ob_batch, ac_batch)
           training_logs.append(train_log)
-          print(f"{babo}/{params['num_agent_train_steps_per_iter']} done")
         # log/save
         print('\nBeginning logging procedure...')
         if log_video:
