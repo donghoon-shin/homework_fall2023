@@ -9,7 +9,7 @@ from collections import OrderedDict
 import cv2
 import numpy as np
 import time
-
+import torch
 from cs285.infrastructure import pytorch_util as ptu
 from cs285.policies.MLP_policy import MLPPolicySL
 
@@ -33,8 +33,8 @@ def sample_trajectory(env, policy, max_path_length, render=False):
             image_obs.append(cv2.resize(img, dsize=(250, 250), interpolation=cv2.INTER_CUBIC))
     
         # TODO use the most recent ob to decide what to do
-        ac = ptu.to_numpy(MLPPolicySL.forward(ob)) #TODO # HINT: this is a numpy array
-        ac = ac[0]
+        ac = ptu.to_numpy(policy.forward(observation = torch.from_numpy(ob).float())) #TODO # HINT: this is a numpy array
+        #ac = ac[0]
 
         # TODO: take that action and get reward and next ob
         next_ob, rew, done, _ = env.step(ac)

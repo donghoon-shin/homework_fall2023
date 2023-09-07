@@ -143,9 +143,23 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         :return:
             dict: 'Training Loss': supervised learning loss
         """
-        # TODO: update the policy and return the loss
+        # TODO: update the policy and return the loss        
         loss_fn = torch.nn.MSELoss()
-        loss = loss_fn(actions,observations)
+
+        observations = torch.from_numpy(observations).float()
+        actions = torch.from_numpy(actions).float()
+
+        for trial in range(len(observations)):
+            action_policy = self.forward(observations[trial,:])    
+
+            lambda_l1 = 0.05  # Regularization strength for L1
+            l1_norm = sum(p.abs().sum() for p in self.mean_net.parameters())  # Calculate the L1 term
+
+            loss = loss_fn(action_policy,actions[trial,:]) + l1_norm
+
+            self.optimizer.zero_grad() # zero's out gradients
+            loss.backward() # populate gradients
+            self.optimizer.step() # update each parameter via gradient descent
 
         return {
             # You can add extra logging information here, but keep this line
