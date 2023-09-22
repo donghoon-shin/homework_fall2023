@@ -94,12 +94,12 @@ class PGAgent(nn.Module):
             # trajectory at each point.
             # In other words: Q(s_t, a_t) = sum_{t'=0}^T gamma^t' r_{t'}
             # TODO: use the helper function self._discounted_return to calculate the Q-values
-            q_values = None
+            q_values = self._discounted_return(rewards)
         else:
             # Case 2: in reward-to-go PG, we only use the rewards after timestep t to estimate the Q-value for (s_t, a_t).
             # In other words: Q(s_t, a_t) = sum_{t'=t}^T gamma^(t'-t) * r_{t'}
             # TODO: use the helper function self._discounted_reward_to_go to calculate the Q-values
-            q_values = None
+            q_values = self._discounted_reward_to_go(rewards)
 
         return q_values
 
@@ -116,7 +116,7 @@ class PGAgent(nn.Module):
         """
         if self.critic is None:
             # TODO: if no baseline, then what are the advantages?
-            advantages = None
+            advantages = self._calculate_q_vals(rewards)
         else:
             # TODO: run the critic and use it as a baseline
             values = None
@@ -156,7 +156,10 @@ class PGAgent(nn.Module):
         Note that all entries of the output list should be the exact same because each sum is from 0 to T (and doesn't
         involve t)!
         """
-        return None
+
+        discounted_return = np.sum(rewards * np.power(self.gamma,np.arange(len(rewards)))) * np.ones_like(rewards)
+
+        return discounted_return
 
 
     def _discounted_reward_to_go(self, rewards: Sequence[float]) -> Sequence[float]:
@@ -164,4 +167,6 @@ class PGAgent(nn.Module):
         Helper function which takes a list of rewards {r_0, r_1, ..., r_t', ... r_T} and returns a list where the entry
         in each index t' is sum_{t'=t}^T gamma^(t'-t) * r_{t'}.
         """
-        return None
+        discounted_reward_to_go = np.cumsum((rewards * np.power(self.gamma,np.arange(len(rewards))))[::-1])[::-1] * np.power(self.gamma,np.arange(len(rewards)))
+
+        return  discounted_reward_to_go
