@@ -60,6 +60,7 @@ class PGAgent(nn.Module):
         Each input is a list of NumPy arrays, where each array corresponds to a single trajectory. The batch size is the
         total number of samples across all trajectories (i.e. the sum of the lengths of all the arrays).
         """
+        assert 4 == 1
 
         # step 1: calculate Q values of each (s_t, a_t) point, using rewards (r_0, ..., r_t, ..., r_T)
         q_values: Sequence[np.ndarray] = self._calculate_q_vals(rewards)
@@ -67,7 +68,6 @@ class PGAgent(nn.Module):
         # TODO: flatten the lists of arrays into 1D arrays, so that the rest of the code can be written in a vectorized
         # way. obs, actions, rewards, terminals, and q_values should all be 1D arrays of the same length beyond this
         # point.
-
         # step 2: calculate advantages from Q values
         advantages: np.ndarray = self._estimate_advantage(
             obs, rewards, q_values, terminals
@@ -75,7 +75,7 @@ class PGAgent(nn.Module):
 
         # step 3: use all datapoints (s_t, a_t, adv_t) to update the PG actor/policy
         # TODO: update the PG actor/policy network once using the advantages
-        info: dict = None
+        info: dict = self.actor.update(obs,actions,advantages)
 
         # step 4: if needed, use all datapoints (s_t, a_t, q_t) to update the PG critic/baseline
         if self.critic is not None:
@@ -156,10 +156,12 @@ class PGAgent(nn.Module):
         Note that all entries of the output list should be the exact same because each sum is from 0 to T (and doesn't
         involve t)!
         """
+        discounted_returns = []
+        for reward in rewards:
+            discounted_return = np.sum(reward * np.power(self.gamma,np.arange(len(reward)))) * np.ones_like(reward)
+            discounted_returns.append(discounted_return)
 
-        discounted_return = np.sum(rewards * np.power(self.gamma,np.arange(len(rewards)))) * np.ones_like(rewards)
-
-        return discounted_return
+        return discounted_returns
 
 
     def _discounted_reward_to_go(self, rewards: Sequence[float]) -> Sequence[float]:
