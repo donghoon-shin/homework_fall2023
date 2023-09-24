@@ -30,7 +30,7 @@ def sample_trajectory(
             )
 
         # TODO use the most recent ob and the policy to decide what to do
-        ac: np.ndarray = policy.forward(ptu.from_numpy(ob)) #NOTE(DS): a code from hw1
+        ac: np.ndarray = policy.get_action(ptu.from_numpy(ob)) #NOTE(DS): a code from hw1
 
         
 

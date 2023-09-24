@@ -17,7 +17,7 @@ from cs285.infrastructure.action_noise_wrapper import ActionNoiseWrapper
 
 MAX_NVIDEO = 2
 
-import pdb
+#import pdb
 #pdb.set_trace()
 
 
@@ -81,7 +81,6 @@ def run_training_loop(args):
         # trajs should be a list of dictionaries of NumPy arrays, where each dictionary corresponds to a trajectory.
         # this line converts this into a single dictionary of lists of NumPy arrays.
         trajs_dict = {k: [traj[k] for traj in trajs] for k in trajs[0]}
-        print(trajs_dict.keys())
         # TODO: train the agent using the sampled trajectories and the agent's update function        
         train_info: dict = agent.update(trajs_dict['observation'], trajs_dict['action'],trajs_dict['reward'],trajs_dict['terminal'])
 
