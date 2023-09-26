@@ -50,7 +50,7 @@ class ValueCritic(nn.Module):
         value_updated = q_values
 
         loss_fn = torch.nn.MSELoss()
-        loss = loss_fn(value, value_updated)
+        loss = loss_fn(value_output, value_updated)
         
        
         self.optimizer.zero_grad() # zero's out gradients

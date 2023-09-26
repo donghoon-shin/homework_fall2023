@@ -9,6 +9,7 @@ from torch import distributions
 
 from cs285.infrastructure import pytorch_util as ptu
 import torch.nn.functional as F
+from torch.distributions import Normal
 
 
 class MLPPolicy(nn.Module):
@@ -72,8 +73,10 @@ class MLPPolicy(nn.Module):
             sampled_action = m.sample()
         else:
             # TODO: define the forward pass for a policy with a continuous action space.
-            actions_policy = self.forward(obs)
-            sampled_action = actions_policy
+            means = self.forward(obs)
+            normal_distribution = Normal(means, torch.exp(self.logstd))
+            sampled_action = normal_distribution.sample()
+
         return ptu.to_numpy(sampled_action)
     
     def forward(self, obs: torch.FloatTensor):
@@ -85,6 +88,10 @@ class MLPPolicy(nn.Module):
         if self.discrete:
             # TODO: define the forward pass for a policy with a discrete action space.
             action = self.logits_net(obs)
+            while action.isnan().all():
+                assert 1 ==0
+                action = self.logits_net(obs+torch.normal(mean=0,std=0.2,size=obs.shape))
+
         else:
             # TODO: define the forward pass for a policy with a continuous action space.
             action = self.mean_net(obs)
@@ -145,9 +152,16 @@ class MLPPolicyPG(MLPPolicy):
 
             # Compute the loss
             loss = -torch.mean(gathered_log_probs * advantages)
-        else: 
-            actions_policy = self.forward(obs)
-            loss = -torch.mean(torch.ones_like(actions_policy.sum(axis=1))* advantages)
+        else: #continuous
+
+            # TODO: define the forward pass for a policy with a continuous action space.
+            means = self.forward(obs)
+            # Split into means and stds
+            normal_distribution = Normal(means, torch.exp(self.logstd))
+            log_prob = normal_distribution.log_prob(actions)   
+            joint_log_prob = log_prob.sum(axis=1)
+
+            loss = -torch.mean(joint_log_prob * advantages)
 
 
         self.optimizer.zero_grad() # zero's out gradients

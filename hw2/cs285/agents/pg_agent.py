@@ -105,6 +105,7 @@ class PGAgent(nn.Module):
             # In other words: Q(s_t, a_t) = sum_{t'=t}^T gamma^(t'-t) * r_{t'}
             # TODO: use the helper function self._discounted_reward_to_go to calculate the Q-values
             q_values = self._discounted_reward_to_go(rewards)
+            #q_values = [self._discounted_reward_to_go(r) for r in rewards] # sam's version
 
         return q_values
 
@@ -124,7 +125,7 @@ class PGAgent(nn.Module):
             advantages = q_values #- q_values.mean()
         else:
             # TODO: run the critic and use it as a baseline
-            values = self.critic.forward(obs)
+            values = ptu.to_numpy(self.critic.forward(ptu.from_numpy(obs)).squeeze())
             assert values.shape == q_values.shape
 
             if self.gae_lambda is None:
@@ -142,7 +143,22 @@ class PGAgent(nn.Module):
                     # TODO: recursively compute advantage estimates starting from timestep T.
                     # HINT: use terminals to handle edge cases. terminals[i] is 1 if the state is the last in its
                     # trajectory, and 0 otherwise.
+                    
+                    delta = rewards[i] + self.gamma * values[i + 1] * (1 - terminals[i]) - values[i]
+                    advantages[i] = delta + self.gamma * self.gae_lambda * (1 - terminals[i]) * advantages[i + 1]
+                    
                     pass
+                    """ #NOTE(DS): my version
+                    for n in range(batch_size - i):
+                        if terminals[i+n]:
+                            n_max = n
+                            break
+                        advantages[i] += (self.gae_lambda**n)*compute_advantage_n(j,obs[i:],rewards[i:]) 
+                    advantages[i] = advantages[i]* (1-self.gae_lambda**n_max)/(1-self.gae_lambda)
+                    """
+                
+                #assert 1==0
+
 
                 # remove dummy advantage
                 advantages = advantages[:-1]
@@ -152,6 +168,16 @@ class PGAgent(nn.Module):
             advantages = (advantages - advantages.mean())/advantages.std()
 
         return advantages
+
+    def compute_advantage_n(self, n, obs_forward, reward_forward):
+        #compute A_n(st,at)
+        
+        
+        A_n = (reward_forward[:n] * np.power(self.gamma,np.arange(len(reward_forward[:n])))).sum()+ \
+            self.gamma**n * ptu.to_numpy(self.critic.forward(ptu.from_numpy(obs_forward[n])).squeeze()) -\
+            ptu.to_numpy(self.critic.forward(ptu.from_numpy(obs_forward[0])).squeeze())
+        return A_n
+
 
     def _discounted_return(self, rewards: Sequence[float]) -> Sequence[float]:
         """
@@ -165,7 +191,6 @@ class PGAgent(nn.Module):
         for reward in rewards:
             discounted_return = np.sum(reward * np.power(self.gamma,np.arange(len(reward)))) * np.ones_like(reward)
             discounted_returns.append(discounted_return)
-
         return discounted_returns
 
 
@@ -176,8 +201,11 @@ class PGAgent(nn.Module):
         """
         discounted_reward_to_gos = []
 
-        for reward in rewards:
-            discounted_reward_to_go = np.cumsum((reward * np.power(self.gamma,np.arange(len(reward))))[::-1])[::-1] * np.power(self.gamma,np.arange(len(reward)))
-            discounted_reward_to_gos.append(discounted_reward_to_go)
-            
+        for reward in rewards:    
+            discounted_reward_to_go = np.cumsum((reward * np.power(self.gamma,np.arange(len(reward))))[::-1])[::-1] \
+                * np.power(1/self.gamma,np.arange(len(reward)))
+            discounted_reward_to_gos.append(discounted_reward_to_go) #my version
+
+        
         return  discounted_reward_to_gos
+    
