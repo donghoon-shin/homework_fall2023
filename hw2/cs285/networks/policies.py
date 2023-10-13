@@ -64,12 +64,12 @@ class MLPPolicy(nn.Module):
 
         if self.discrete:
             # TODO: define the forward pass for a policy with a discrete action space.
-            actions_policy = self.forward(obs)
-            log_probs = F.log_softmax(actions_policy, dim=-1)
-            probs = torch.exp(log_probs)
+            actions_dist = self.forward(obs)
+            #log_probs = F.log_softmax(actions_dist, dim=-1)
+            #probs = torch.exp(log_probs)
 
             # Sampling
-            m = torch.distributions.Categorical(probs)
+            m = torch.distributions.Categorical(logits = actions_dist)
             sampled_action = m.sample()
         else:
             # TODO: define the forward pass for a policy with a continuous action space.
@@ -88,9 +88,6 @@ class MLPPolicy(nn.Module):
         if self.discrete:
             # TODO: define the forward pass for a policy with a discrete action space.
             action = self.logits_net(obs)
-            while action.isnan().all():
-                assert 1 ==0
-                action = self.logits_net(obs+torch.normal(mean=0,std=0.2,size=obs.shape))
 
         else:
             # TODO: define the forward pass for a policy with a continuous action space.
@@ -99,30 +96,7 @@ class MLPPolicy(nn.Module):
 
     def update(self, obs: np.ndarray, actions: np.ndarray, *args, **kwargs) -> dict:
         """Performs one iteration of gradient descent on the provided batch of data."""
-        
-        assert 1 == 0
-        # TODO: implement the policy gradient actor update.
-        actions_policy = self.forward(obs)
-        #advantages = torch.rand_like(advantages,requires_grad = True)
-        log_probs = F.log_softmax(actions_policy, dim=-1)
-
-        # Assume 'actions' are the indices of the actions taken, in the same batch order as log_probs
-        # Gather only the log probabilities of actions that were actually taken
-        gathered_log_probs = log_probs.gather(1, actions.unsqueeze(-1)).squeeze()
-
-        # Compute the loss
-        loss = -torch.mean(gathered_log_probs * advantages)
-
-
-
-        self.optimizer.zero_grad() # zero's out gradients
-        loss.backward() # populate gradients
-        self.optimizer.step() # update each parameter via gradient descent
-
-        return {
-            # You can add extra logging information here, but keep this line
-            'Training Loss': ptu.to_numpy(loss),
-        }
+        raise NotImplementedError
 
 
 class MLPPolicyPG(MLPPolicy):
@@ -141,13 +115,11 @@ class MLPPolicyPG(MLPPolicy):
 
         if self.discrete:
             # TODO: implement the policy gradient actor update.
-            actions_policy = self.forward(obs)
-            #advantages = torch.rand_like(advantages,requires_grad = True)
-            log_probs = F.log_softmax(actions_policy, dim=-1)
+            actions_dist = self.forward(obs)
+            log_probs = F.log_softmax(actions_dist, dim=-1)
 
             # Assume 'actions' are the indices of the actions taken, in the same batch order as log_probs
             # Gather only the log probabilities of actions that were actually taken
-            #gathered_log_probs = log_probs.gather(1, actions.unsqueeze(-1)).squeeze()
             gathered_log_probs = log_probs.gather(1, actions.unsqueeze(-1).long()).squeeze()
 
             # Compute the loss

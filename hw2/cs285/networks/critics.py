@@ -45,14 +45,11 @@ class ValueCritic(nn.Module):
 
         # TODO: update the critic using the observations and q_values
         # NOTE(DS): below loss might not be correct
+        value_target = q_values
         value_output = self.forward(obs)   
-
-        value_updated = q_values
-
         loss_fn = torch.nn.MSELoss()
-        loss = loss_fn(value_output, value_updated)
+        loss = loss_fn(value_output, value_target)
         
-       
         self.optimizer.zero_grad() # zero's out gradients
         loss.backward() # populate gradients
         self.optimizer.step() # update each parameter via gradient descent
