@@ -299,14 +299,16 @@ class SoftActorCritic(nn.Module):
 
         assert action_distribution.batch_shape == (batch_size,), action_distribution.batch_shape
 
+
+        '''
         # TODO(student): Sample actions
         # Note: Think about whether to use .rsample() or .sample() here...
         action = action_distribution.rsample()
 
         # TODO(student): Compute Q-values for the sampled state-action pair
         q_values = self.critic(obs,action)
-
         '''
+        
 
         # TODO(student): Sample actions
         # Note: Think about whether to use .rsample() or .sample() here...
@@ -315,13 +317,12 @@ class SoftActorCritic(nn.Module):
         replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)      
         q_values = self.critic(replicated_obs,action)
         q_values = torch.mean(q_values, axis=0)
-        '''
+        
         advantage = q_values
 
 
         # TODO(student): Compute the actor loss
-        log_probs = action_distribution.log_prob(action)
-        loss = -torch.mean(log_probs * advantage)
+        loss = -torch.mean(advantage)
 
         return loss, torch.mean(self.entropy(action_distribution))
 
