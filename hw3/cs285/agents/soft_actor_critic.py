@@ -149,12 +149,18 @@ class SoftActorCritic(nn.Module):
 
         # TODO(student): Implement the different backup strategies.
         if self.target_critic_backup_type == "doubleq":
+
+            next_qs = next_qs.flip(dims=[0])
+
+            '''
             next_qs_2 = torch.zeros_like(next_qs)
             next_qs_2[0,:] = copy.deepcopy(next_qs[1,:])
             next_qs_2[1,:] = copy.deepcopy(next_qs[0,:])
-            next_qs = copy.deepcopy(next_qs_2)
+            next_qs = copy.deepcopy(next_qs_2)'''
         elif self.target_critic_backup_type == "min":
-            next_qs = copy.deepcopy(torch.min(next_qs, dim=0).values) 
+            #next_qs = copy.deepcopy(torch.min(next_qs, dim=0).values) 
+            next_qs = torch.min(next_qs, dim=0).values
+            next_qs = next_qs[None, :].expand(self.num_critic_networks, batch_size)
         else:
             # Default, we don't need to do anything.
             pass
@@ -300,24 +306,23 @@ class SoftActorCritic(nn.Module):
         assert action_distribution.batch_shape == (batch_size,), action_distribution.batch_shape
 
 
-        '''
+        
         # TODO(student): Sample actions
         # Note: Think about whether to use .rsample() or .sample() here...
         action = action_distribution.rsample()
 
         # TODO(student): Compute Q-values for the sampled state-action pair
         q_values = self.critic(obs,action)
-        '''
         
-
+        '''
         # TODO(student): Sample actions
         # Note: Think about whether to use .rsample() or .sample() here...
         action = action_distribution.rsample((self.num_actor_samples,))
 
         replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)      
-        q_values = self.critic(replicated_obs,action)
-        q_values = torch.mean(q_values, axis=0)
-        
+        q_values = self.critic(replicated_obs,action) 
+        q_values = torch.mean(q_values) 
+        '''
         advantage = q_values
 
 
