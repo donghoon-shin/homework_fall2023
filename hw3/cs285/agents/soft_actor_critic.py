@@ -243,7 +243,7 @@ class SoftActorCritic(nn.Module):
         #NOTE(DS): to make the system work without entropy
         #return torch.tensor(0, dtype=torch.float)
 
-        '''
+    
         N = 100
 
         samples = action_distribution.rsample((N,))
@@ -251,11 +251,11 @@ class SoftActorCritic(nn.Module):
         approx_entropy = -torch.mean(log_probs, dim=0)
 
         # TODO(student): Compute the entropy of the action distribution.
-        # Note: Think about whether to use .rsample() or .sample() here... '''
+        # Note: Think about whether to use .rsample() or .sample() here... 
 
-        samples = action_distribution.rsample()
-        log_probs = action_distribution.log_prob(samples)
-        approx_entropy = -torch.mean(log_probs, dim=0)
+        #samples = action_distribution.rsample()
+        #log_probs = action_distribution.log_prob(samples)
+        #approx_entropy = -torch.mean(log_probs, dim=0)
         
         return approx_entropy
     
