@@ -160,7 +160,6 @@ class SoftActorCritic(nn.Module):
         elif self.target_critic_backup_type == "min":
             #next_qs = copy.deepcopy(torch.min(next_qs, dim=0).values) 
             next_qs = torch.min(next_qs, dim=0).values
-            next_qs = next_qs[None, :].expand(self.num_critic_networks, batch_size)
         else:
             # Default, we don't need to do anything.
             pass
@@ -203,11 +202,6 @@ class SoftActorCritic(nn.Module):
 
             next_qs = self.q_backup_strategy(next_qs)
 
-            if self.use_entropy_bonus and self.backup_entropy:
-                # TODO(student): Add entropy bonus to the target values for SAC
-                next_action_entropy = self.entropy(self.actor(next_obs))
-                next_qs += next_action_entropy
-
 
             # Handle Q-values from multiple different target critic networks (if necessary)
             # (For double-Q, clip-Q, etc.)
@@ -215,12 +209,17 @@ class SoftActorCritic(nn.Module):
             # Compute the target Q-value
             target_values: torch.Tensor = reward + self.discount * next_qs * (1 - done.float())
 
+            #if this is after target_values, it is not being used
+            if self.use_entropy_bonus and self.backup_entropy:
+                # TODO(student): Add entropy bonus to the target values for SAC
+                next_action_entropy = self.entropy(self.actor(next_obs))
+                next_qs += next_action_entropy
+
+
             assert next_qs.shape == (
                 self.num_critic_networks,
                 batch_size,
             ), next_qs.shape
-
-
 
         # TODO(student): Update the critic
         # Predict Q-values
@@ -245,10 +244,8 @@ class SoftActorCritic(nn.Module):
         """
         Compute the (approximate) entropy of the action distribution for each batch element.
         """
-    
-        N = 100
 
-        samples = action_distribution.rsample((N,))
+        samples = action_distribution.rsample((self.num_actor_samples,))
         log_probs = action_distribution.log_prob(samples)
         approx_entropy = -torch.mean(log_probs, dim=0)
 
@@ -279,6 +276,7 @@ class SoftActorCritic(nn.Module):
 
             # TODO(student): Compute Q-values for the current state-action pair
             replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)
+
             q_values = self.critic(replicated_obs,action)
             assert q_values.shape == (
                 self.num_critic_networks,
