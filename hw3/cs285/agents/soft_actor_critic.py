@@ -199,7 +199,7 @@ class SoftActorCritic(nn.Module):
 
             if self.use_entropy_bonus and self.backup_entropy:
                 # TODO(student): Add entropy bonus to the target values for SAC
-                next_action_entropy = self.entropy(next_action_distribution)
+                next_action_entropy = self.entropy(self.actor(next_obs))
                 next_qs += next_action_entropy
 
 
@@ -239,10 +239,6 @@ class SoftActorCritic(nn.Module):
         """
         Compute the (approximate) entropy of the action distribution for each batch element.
         """
-        
-        #NOTE(DS): to make the system work without entropy
-        #return torch.tensor(0, dtype=torch.float)
-
     
         N = 100
 
@@ -278,6 +274,11 @@ class SoftActorCritic(nn.Module):
             # TODO(student): Compute Q-values for the current state-action pair
             replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)
             q_values = self.critic(replicated_obs,action)
+            assert q_values.shape == (
+                self.num_critic_networks,
+                self.num_actor_samples,
+                batch_size,
+            ), q_values.shape
 
             # Our best guess of the Q-values is the mean of the ensemble
             q_values = torch.mean(q_values, axis=0)
@@ -300,13 +301,21 @@ class SoftActorCritic(nn.Module):
 
         # TODO(student): Sample actions
         # Note: Think about whether to use .rsample() or .sample() here...
-        action = action_distribution.rsample((self.num_actor_samples,))
+        action = action_distribution.rsample()
 
         # TODO(student): Compute Q-values for the sampled state-action pair
-        replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)
+        q_values = self.critic(obs,action)
+
+        '''
+
+        # TODO(student): Sample actions
+        # Note: Think about whether to use .rsample() or .sample() here...
+        action = action_distribution.rsample((self.num_actor_samples,))
+
+        replicated_obs = obs.unsqueeze(0).repeat(self.num_actor_samples, 1, 1)      
         q_values = self.critic(replicated_obs,action)
         q_values = torch.mean(q_values, axis=0)
-
+        '''
         advantage = q_values
 
 
@@ -369,7 +378,6 @@ class SoftActorCritic(nn.Module):
         critic_infos = []
         # TODO(student): Update the critic for num_critic_updates steps, and add the output stats to critic_infos
         if step%self.num_critic_updates == 0:
-
             critic_infos.append(self.update_critic(obs = observations,
                             action = actions,
                             reward = rewards,
@@ -384,7 +392,6 @@ class SoftActorCritic(nn.Module):
         #  - step
         #  - self.target_update_period (None when using soft updates)
         #  - self.soft_target_update_rate (None when using hard updates)
-
         if self.target_update_period is None: # soft update
                 self.update_target_critic()
         elif self.target_update_period is not None: # hard update            
