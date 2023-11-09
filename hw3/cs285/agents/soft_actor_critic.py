@@ -198,23 +198,27 @@ class SoftActorCritic(nn.Module):
             next_action = next_action_distribution.sample()
 
             # Compute the next Q-values for the sampled actions
-            next_qs = self.critic(next_obs, next_action)
+            next_qs = self.target_critic(next_obs, next_action)
 
-            next_qs = self.q_backup_strategy(next_qs)
+            assert next_qs.shape == (
+                self.num_critic_networks,
+                batch_size,
+            ), next_qs.shape
 
+            if self.use_entropy_bonus and self.backup_entropy:
+                # TODO(student): Add entropy bonus to the target values for SAC
+                next_action_entropy = self.entropy(self.actor(next_obs))
+                next_qs += next_action_entropy
+    
 
             # Handle Q-values from multiple different target critic networks (if necessary)
             # (For double-Q, clip-Q, etc.)
+            next_qs = self.q_backup_strategy(next_qs)
 
             # Compute the target Q-value
             target_values: torch.Tensor = reward + self.discount * next_qs * (1 - done.float())
 
             #if this is after target_values, it is not being used
-            if self.use_entropy_bonus and self.backup_entropy:
-                # TODO(student): Add entropy bonus to the target values for SAC
-                next_action_entropy = self.entropy(self.actor(next_obs))
-                next_qs += next_action_entropy
-
 
             assert next_qs.shape == (
                 self.num_critic_networks,
@@ -228,7 +232,6 @@ class SoftActorCritic(nn.Module):
 
         # Compute loss
         loss: torch.Tensor = self.critic_loss(q_values, target_values)
-
 
         self.critic_optimizer.zero_grad()
         loss.backward()
