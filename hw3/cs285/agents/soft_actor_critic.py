@@ -207,8 +207,8 @@ class SoftActorCritic(nn.Module):
 
             if self.use_entropy_bonus and self.backup_entropy:
                 # TODO(student): Add entropy bonus to the target values for SAC
-                next_action_entropy = self.entropy(self.actor(next_obs))
-                next_qs += next_action_entropy
+                next_action_entropy = self.entropy(next_action_distribution)
+                next_qs += self.temperature * next_action_entropy
     
 
             # Handle Q-values from multiple different target critic networks (if necessary)
@@ -247,19 +247,22 @@ class SoftActorCritic(nn.Module):
         """
         Compute the (approximate) entropy of the action distribution for each batch element.
         """
-
+        
         samples = action_distribution.rsample((self.num_actor_samples,))
         log_probs = action_distribution.log_prob(samples)
         approx_entropy = -torch.mean(log_probs, dim=0)
-
-        # TODO(student): Compute the entropy of the action distribution.
-        # Note: Think about whether to use .rsample() or .sample() here... 
-
-        #samples = action_distribution.rsample()
-        #log_probs = action_distribution.log_prob(samples)
-        #approx_entropy = -torch.mean(log_probs, dim=0)
-        
         return approx_entropy
+        
+        '''
+        ################ TODO(student): Compute the entropy of the action distribution.
+        # Note: Think about whether to use .rsample() or .sample() here...
+        sampled_action  = action_distribution.rsample()
+        
+        # Return the negative log probability of the sampled action. 
+        # This serves as an approximation for the entropy of the action distribution.
+        entropy_approx = -action_distribution.log_prob(sampled_action)
+        return entropy_approx
+        '''
     
     def actor_loss_reinforce(self, obs: torch.Tensor):
         batch_size = obs.shape[0]
